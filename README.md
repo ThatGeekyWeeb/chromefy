@@ -4,8 +4,11 @@ Transforming Chromium to Chrome
 You can find us at the Telegram Group:
 https://t.me/chromeosforpc
    > Please, ask your questions at the group and don't PM the admins. :)
-   
+
 You can also follow us on Twitter: https://twitter.com/CroissantDev
+
+This is a custom fork for updating EoL Chrome devices, by flashing Chrome-ified ChromiumOS imges to them.\
+Only option 1 is available with the `croissant.sh` found in this repo.
 
 ## Observations
 
@@ -36,30 +39,7 @@ Project Croissant has three installation options. The first option generates an 
   - Requires: One computer running Linux or Chromium.
   - It will generate a Chrome img ready to install.
 
-### Option 2-A: Automated Script (drive)
-  - It uses a script, so the migration is easier.
-  - Requires: 2 USB sticks: The first to deploy the Chromium img on it and the second to store the two recovery files.
-  - The script can downsize your sdX5 drive and resize sdX3 with the generated free space (will ask first).
-  
-### Option 2-B: Automated Script (partition)
-  - It uses a script, so the migration is easier.
-  - Requires: 2 USB sticks: The first to deploy the Chromium img on it and the second to store the two recovery files.
-  - As said before, you will need to resize the third partition of your sdX drive (EX: sda3 inside sda, if your main drive is sda). In this method you can either downsize sdX1 (data partition) or delete the sdX5 partition (we won't need it) to get more unallocated space.
-
-### Option 3: Manual Configuration
-  - It requires some patience and more commands. And it also has several steps that need to be done.
-  - It can be done with only one USB stick.
-  - Here you can't just delete the fifth (sdX5) partition, because you will need it.
- 
-Choose the best method for you and follow the installation process.
-
----
-
 ## Installation Process
-
-With the automated script method you can either generate your own Chrome img ready to run and install (Option 1) or you can also apply the Chrome into a installed Chromium at your computer (Option 2). I strongly suggest you to use the first one, because it will also allows you to have a backup img to deploy anytime you want to install it on a new pc.
-
-
 ### Option 1: Automated Script - Generating your own Chrome img:
 
 Here you will generate your img and then deploy it to a usb stick, this will allow you to install it on your computer. If you already have a Project Croissant generated ChromeOS img, you can deploy it to a usb stick, boot from it at your computer and then jump to the ***Installing an img at your computer***. We won't provide the imgs.
@@ -115,108 +95,13 @@ curl  -L  https://goo.gl/HdjwAZ   |  sudo  bash  -s  /dev/sda
 
 To update Chrome OS, repeat the process, but when you run ```chromeos-install``` make sure to add the flag ```--preserve_stateful``` like so:
 
-```chromeos-install  --dst  /dev/sda  --skip_postinstall --preserve_stateful```
+```
+chromeos-install  --dst  /dev/sda  --skip_postinstall --preserve_stateful
+```
 
 This ensures that existing Chrome OS user data is not wiped.
 
 ---
-
-### Option 2: Automated Script - Applying Chrome to Chromium:
-
-Flash the selected **Chromium** OS build on the first USB, boot into the live USB and install it on your HDD/SSD by typing the following command on the shell (keep in mind this will wipe your HDD, so backup everything you need and don't blame us later)
-```sh
-sudo /usr/sbin/chromeos-install --dst YOURDRIVE (Ex: /dev/sda)
-```
-- Now make sure that your chromium HDD/SSD installation is working before proceeding. Also save your chosen recovery image (that we will be calling chosenImg.bin), swtpm.tar or caroline recovery image (here called carolineImg.bin) and the [Installation script](https://github.com/imperador/chromefy/releases/download/v1.1/chromefy.sh) to the second USB stick.
-
-OPTION 2B ONLY: Resize the third partition of your sdX drive (EX: sda3 inside sda) from its current size to atleast 4GB (suggestion: search about using Gparted live USB to resize it). And remember: You can either downsize sdX1 (data partition) or delete the sdX5 partition (we won't need it) to get more unallocated space. 
-
-   > Multiboot users: You must use the ROOT-A partition instead of your third partition (sda3). 
-   
-After this, connect both USB sticks to you computer and boot from your live USB again (with Chromium), make sure you have your Chrome OS images available (on the second USB stick) and go to the folder where you downloaded the croissant script and run it with the following command (considering your system partition as /dev/sda3):
-
-OPTION 2A:
-```sh
-sudo bash croissant.sh /dev/sda /path/to/chosenImg.bin /path/to/carolineImg.bin_OR_swtpm.tar
-```
-OPTION 2B:
-```sh
-sudo bash croissant.sh /dev/sda3 /path/to/chosenImg.bin /path/to/carolineImg.bin_OR_swtpm.tar
-```
-
-Don't leave live USB yet, make a powerwash (manually) by typing
-
-```sh
-sudo mkfs.ext4 YOURDATAPARTITION(Ex: /dev/sda1)
-```
-
-You can now reboot and enjoy your new "chromebook"
-
-To update,  repeat the process, but:
-
-
-	1. when you run chromeos-install make sure to add the flag --preserve_stateful like so:
-
-		* chromeos-install  --dst  /dev/sda  --skip_postinstall --preserve_stateful
-
-	2. Run Option 2B, *even if* you installed with option 2A.
-
-	3. Omit the last step where you run mkfs.ext4
-
----
-
-### Option 3: Manual Configuration
- 
-After finishing installing a Chromium OS, open the browser and press CTRL+ALT+T to open chroot
-Type:
-```sh
-shell
-sudo su
-```
-
-Installing Chrome OS (some notes):
-  - If the file is in Downloads folder, replace '{path}' with 'home/chronos/user/Downloads', if it is at another folder, replace it with the other folder location. Use the path accordingly with your file location
-  - Save your chosen recovery image (that we will be calling chosenImg.bin) and caroline recovery image (here called carolineImg.bin) at this folder
-  - Any password or username will be 'chronos'
-
-#### Configuring the new Chrome partition
-
-Use the following commands to configure the sda5 (or nvem0n1p5) and other basic things (the exemple is using caroline recovery file):
-Type "lsblk" to know your partitions. Search for sda, sdb or nvme0n1 with the size of your usb or HDD. In the following commands, change "sda" for the one that you've found:
-```sh
-losetup -fP {path}/chosenImg.bin
-mkdir /home/chronos/image
-mkdir /home/chronos/local
-mkfs.ext4 /dev/sda5
-mount /dev/sda5 /home/chronos/local
-```
-
-#### Copying the img to the local path
-
-Type "losetup" to get a list, search for loop{number} that has the img file on it
-Memorise the number. So if it is loop2, then {number} = 2
-Type the following commands (using the {number} that you got in the last step):
-```sh
-mount /dev/loop{number}p3 /home/chronos/image -o loop,ro
-cp -av /home/chronos/image/* /home/chronos/local
-rm -rf /home/chronos/local/lib/firmware
-rm -rf /home/chronos/local/lib/modules/ 
-cp -av /lib/firmware /home/chronos/local/lib/
-cp -av /lib/modules/ /home/chronos/local/lib/
-rm -rf /home/chronos/local/etc/modprobe.d/alsa-skl.conf
-```
-
-Change in /home/chronos/local/etc/selinux/config the word enforcing to permissive with the following command:
-```sh
-sudo sed '0,/enforcing/s/enforcing/permissive/' -i /home/chronos/local/etc/selinux/config
-```
-Type "sync" and press Enter
-
-
-Now restart your computer. When the screen with the boot options appear (the grub), press 'e' FAST (or it will boot into the chromium). You will have to change the root for:
-root=/dev/sda5
-
-Now press F10. If it boots corectly, you are ready to go
  
 # ADDITIONAL:
 
