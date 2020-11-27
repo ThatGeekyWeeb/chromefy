@@ -139,9 +139,13 @@ umount /home/chronos/image
 
 #Copies modules and certificates from ChromiumOS
 rm -rf /home/chronos/local/lib/firmware
-rm -rf /home/chronos/local/lib/modules/ 
+rm -rf /home/chronos/local/lib/modules/
 cp -av "$chromium_root_dir"/{lib,boot} /home/chronos/local/
-cp -nav "$chromium_root_dir"/usr/lib64/{dri,va} /home/chronos/local/usr/lib64/ #Extra GPU drivers
+case $(arch) in 
+	x86_64|amd64)
+	cp -nav "$chromium_root_dir"/usr/lib64/{dri,va} /home/chronos/local/usr/lib64/ #Extra GPU drivers
+	;;
+esac
 rm -rf /home/chronos/local/etc/modprobe.d/alsa*.conf
 echo; echo "Leave selinux on enforcing? (Won't break SafetyNet without developer mode, but might cause issues with android apps)"
 echo "Answer no if unsure (y/n)"
@@ -174,29 +178,8 @@ if [ "$flag_tpm1" = true ]; then
 fi
 
 #Fix for TPM2 images (must pass third parameter) (TPM emulation method)
-if [ "$flag_vtpm" = true ]; then
-    cp -av /home/chronos/RAW/swtpm/usr/sbin/* /home/chronos/local/usr/sbin
-    cp -av /home/chronos/RAW/swtpm/usr/lib64/* /home/chronos/local/usr/lib64
-    
-    cd /home/chronos/local/usr/lib64 || echo "Folder missing !!!" && exit 1
-    ln -s libswtpm_libtpms.so.0.0.0 libswtpm_libtpms.so.0
-    ln -s libswtpm_libtpms.so.0 libswtpm_libtpms.so
-    ln -s libtpms.so.0.6.0 libtpms.so.0
-    ln -s libtpms.so.0 libtpms.so
-    ln -s libtpm_unseal.so.1.0.0 libtpm_unseal.so.1
-    ln -s libtpm_unseal.so.1 libtpm_unseal.so
-    
-    cat >/home/chronos/local/etc/init/_vtpm.conf <<EOL
-    start on started boot-services
+# Useless on Chrome devices, TPM's do exist
 
-    script
-        mkdir -p /var/lib/trunks
-        modprobe tpm_vtpm_proxy
-        swtpm chardev --vtpm-proxy --tpm2 --tpmstate dir=/var/lib/trunks --ctrl type=tcp,port=10001
-        swtpm_ioctl --tcp :10001 -i
-    end script
-EOL
-fi
 
 #Fix ChromeOS installer (Automatically skip postinstall and fix UUIDs)
 read -r -d '' CHROMEOS_INSTALL_FIX_GRUB <<'EOF'
